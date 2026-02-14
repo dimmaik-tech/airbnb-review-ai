@@ -1,1 +1,1 @@
-streamlitopenaipython-dotenvrequestspandas
+streamlittransformerstorchsentencepiecescikit-learn
