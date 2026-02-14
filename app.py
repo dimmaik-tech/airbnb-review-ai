@@ -13,12 +13,12 @@ os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 # ----------------------------
 # Page config
 # ----------------------------
-st.set_page_config(page_title="Airbnb & Booking Review AI", page_icon="🏠")
+st.set_page_config(page_title="Airbnb Review AI", page_icon="🏠")
 
 # ----------------------------
 # Title
 # ----------------------------
-st.title("🏠 Airbnb & Booking Review AI Assistant")
+st.title("🏠 Airbnb Review AI Assistant")
 st.write("Analyze guest reviews & generate the perfect host reply.")
 
 # ----------------------------
