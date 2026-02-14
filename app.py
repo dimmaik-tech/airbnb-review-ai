@@ -4,48 +4,47 @@ import os
 from transformers import pipeline
 
 # ----------------------------
-# Hide warnings + HF noise
+# Hide warnings
 # ----------------------------
 warnings.filterwarnings("ignore")
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
-os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 # ----------------------------
 # Page config
 # ----------------------------
-st.set_page_config(page_title="Airbnb Review AI", page_icon="🏠")
+st.set_page_config(page_title="Host Review AI", page_icon="🏠")
 
 # ----------------------------
 # Title
 # ----------------------------
-st.title("🏠 Airbnb Review AI Assistant")
-st.write("Analyze guest reviews & generate the perfect host reply.")
+st.title("🏠 Host Review AI Assistant")
+st.write("Generate perfect replies for Airbnb & Booking reviews.")
 
 # ----------------------------
-# Load ONLY Sentiment Model (Lightweight)
+# Load Sentiment Model (Lightweight)
 # ----------------------------
 @st.cache_resource
-def load_sentiment_model():
+def load_sentiment():
     return pipeline(
         "sentiment-analysis",
         model="distilbert-base-uncased-finetuned-sst-2-english"
     )
 
-sentiment_model = load_sentiment_model()
+sentiment_model = load_sentiment()
 
 # ----------------------------
-# Simple Topic Detection (No AI, No RAM)
+# Detect Topic (simple + fast)
 # ----------------------------
 def detect_topic(text):
     text = text.lower()
 
     if "noise" in text or "loud" in text:
         return "noise"
-    if "dirty" in text or "clean" in text or "cleanliness" in text:
+    if "dirty" in text or "clean" in text:
         return "cleanliness"
-    if "location" in text or "close" in text or "area" in text:
+    if "location" in text or "close" in text:
         return "location"
-    if "host" in text or "staff" in text or "friendly" in text:
+    if "host" in text or "staff" in text:
         return "hospitality"
     if "bed" in text or "comfort" in text:
         return "comfort"
@@ -55,7 +54,15 @@ def detect_topic(text):
     return "overall experience"
 
 # ----------------------------
-# Options
+# Platform selector
+# ----------------------------
+platform = st.selectbox(
+    "Select platform:",
+    ["Airbnb", "Booking.com"]
+)
+
+# ----------------------------
+# Tone selector
 # ----------------------------
 tone = st.selectbox(
     "Choose reply style:",
@@ -63,87 +70,73 @@ tone = st.selectbox(
 )
 
 # ----------------------------
-# Input
+# Input review
 # ----------------------------
-review = st.text_area("✍️ Paste a guest review here:")
+review = st.text_area("✍️ Paste the guest review here:")
 
 # ----------------------------
 # Analyze Button
 # ----------------------------
-if st.button("Analyze Review"):
+if st.button("Generate Reply"):
 
     if review.strip() == "":
         st.warning("⚠️ Please enter a review first.")
 
     else:
-        # ----------------------------
-        # Sentiment Analysis
-        # ----------------------------
-        sent_result = sentiment_model(review)[0]
-        sentiment_label = sent_result["label"]
-        confidence = round(sent_result["score"], 2)
+        # Sentiment
+        sent = sentiment_model(review)[0]
+        label = sent["label"]
+        confidence = round(sent["score"], 2)
 
-        # Topic detection (light)
-        main_topic = detect_topic(review)
+        topic = detect_topic(review)
 
         # ----------------------------
-        # Reply Generator
+        # POSITIVE REVIEW → Always Thank
         # ----------------------------
-        if sentiment_label == "POSITIVE":
+        if label == "POSITIVE":
 
-            if tone == "Friendly 😊":
+            if platform == "Airbnb":
                 reply = (
                     "Thank you so much for your wonderful review! 😊 "
-                    "We’re truly happy you enjoyed your stay. "
-                    "Hope to welcome you back again soon!"
+                    "We’re truly happy you enjoyed your stay and appreciated "
+                    "the comfort and location. "
+                    "You are always welcome back anytime!"
                 )
 
-            elif tone == "Professional ⭐":
+            else:  # Booking
                 reply = (
-                    "Thank you very much for your kind feedback. "
-                    "We are delighted that you had a great experience. "
-                    "We look forward to hosting you again in the future."
+                    "Thank you for your excellent feedback. "
+                    "We are delighted you enjoyed your stay. "
+                    "We look forward to welcoming you again."
                 )
 
-            else:  # Luxury
-                reply = (
-                    "Thank you for sharing such a wonderful review. "
-                    "It was a pleasure hosting you, and we are delighted "
-                    "that you enjoyed the comfort and overall experience. "
-                    "We would be honored to welcome you back again."
-                )
-
+        # ----------------------------
+        # NEGATIVE REVIEW → Apology + Improvement
+        # ----------------------------
         else:
-            # Negative or mixed review → apology
-            if tone == "Friendly 😊":
+
+            if platform == "Airbnb":
                 reply = (
-                    f"Thank you for your feedback! 😊 "
-                    f"We’re sorry about the issue regarding {main_topic}. "
-                    "We will do our best to improve. Hope to host you again!"
+                    f"Thank you for your feedback. "
+                    f"We’re sorry about the issue regarding {topic}. "
+                    "We will work on improvements immediately. "
+                    "Hope we can host you again in the future."
                 )
 
-            elif tone == "Professional ⭐":
+            else:  # Booking
                 reply = (
                     f"Thank you for sharing your experience. "
-                    f"We apologize for the inconvenience related to {main_topic}. "
-                    "Your feedback helps us improve, and we appreciate it."
-                )
-
-            else:  # Luxury
-                reply = (
-                    f"Thank you for your valuable feedback. "
-                    f"We sincerely regret the concern regarding {main_topic}. "
-                    "Our team is already reviewing improvements to ensure "
-                    "an exceptional stay in the future."
+                    f"We regret the inconvenience related to {topic}. "
+                    "Your comments help us improve, and we appreciate them."
                 )
 
         # ----------------------------
-        # Results
+        # Display Results
         # ----------------------------
         st.subheader("📊 Analysis Results")
-        st.write("😊 Sentiment:", sentiment_label)
+        st.write("Sentiment:", label)
         st.write("Confidence:", confidence)
-        st.write("Topic detected:", main_topic)
+        st.write("Topic detected:", topic)
 
-        st.subheader("✉️ Suggested Host Reply")
-        st.text_area("Copy your reply:", reply, height=120)
+        st.subheader("✉️ Suggested Reply")
+        st.text_area("Copy your reply:", reply, height=140)
