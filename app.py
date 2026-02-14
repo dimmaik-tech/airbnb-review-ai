@@ -1,3 +1,4 @@
+from transformers import pipeline
 import streamlit as st
 import warnings
 import os
