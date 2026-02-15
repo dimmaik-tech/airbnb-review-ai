@@ -18,7 +18,7 @@ st.set_page_config(page_title="Host Review AI", page_icon="🏠")
 # Title
 # ----------------------------
 st.title("🏠 Host Review AI Assistant")
-st.write("Generate perfect replies for Airbnb & Booking reviews.")
+st.write("Generate perfect replies for Airbnb & Booking reviews (English + Greek).")
 
 # ----------------------------
 # Load Sentiment Model (Lightweight)
@@ -33,7 +33,7 @@ def load_sentiment():
 sentiment_model = load_sentiment()
 
 # ----------------------------
-# Detect Topic (simple + fast)
+# Topic detection (fast keywords)
 # ----------------------------
 def detect_topic(text):
     text = text.lower()
@@ -42,9 +42,9 @@ def detect_topic(text):
         return "noise"
     if "dirty" in text or "clean" in text:
         return "cleanliness"
-    if "location" in text or "close" in text:
+    if "location" in text or "close" in text or "area" in text:
         return "location"
-    if "host" in text or "staff" in text:
+    if "host" in text or "staff" in text or "service" in text:
         return "hospitality"
     if "bed" in text or "comfort" in text:
         return "comfort"
@@ -54,30 +54,28 @@ def detect_topic(text):
     return "overall experience"
 
 # ----------------------------
-# Platform selector
+# Controls
 # ----------------------------
-platform = st.selectbox(
-    "Select platform:",
-    ["Airbnb", "Booking.com"]
-)
+platform = st.selectbox("Platform:", ["Airbnb", "Booking.com"])
 
-# ----------------------------
-# Tone selector
-# ----------------------------
+language = st.selectbox("Reply Language:", ["English 🇬🇧", "Greek 🇬🇷"])
+
+rating = st.slider("Guest Rating (Stars):", 1, 5, 5)
+
 tone = st.selectbox(
-    "Choose reply style:",
+    "Reply Style:",
     ["Friendly 😊", "Professional ⭐", "Luxury 5★ ✨"]
 )
 
 # ----------------------------
-# Input review
+# Review Input
 # ----------------------------
 review = st.text_area("✍️ Paste the guest review here:")
 
 # ----------------------------
-# Analyze Button
+# Generate Reply
 # ----------------------------
-if st.button("Generate Reply"):
+if st.button("Generate Reply 🚀"):
 
     if review.strip() == "":
         st.warning("⚠️ Please enter a review first.")
@@ -91,43 +89,63 @@ if st.button("Generate Reply"):
         topic = detect_topic(review)
 
         # ----------------------------
-        # POSITIVE REVIEW → Always Thank
+        # POSITIVE LOGIC
         # ----------------------------
-        if label == "POSITIVE":
-
-            if platform == "Airbnb":
-                reply = (
-                    "Thank you so much for your wonderful review! 😊 "
-                    "We’re truly happy you enjoyed your stay and appreciated "
-                    "the comfort and location. "
-                    "You are always welcome back anytime!"
-                )
-
-            else:  # Booking
-                reply = (
-                    "Thank you for your excellent feedback. "
-                    "We are delighted you enjoyed your stay. "
-                    "We look forward to welcoming you again."
-                )
+        is_positive = (label == "POSITIVE" and rating >= 4)
 
         # ----------------------------
-        # NEGATIVE REVIEW → Apology + Improvement
+        # Reply Templates
         # ----------------------------
+        if is_positive:
+            # THANK YOU reply (no apology)
+
+            if language == "English 🇬🇧":
+
+                if platform == "Airbnb":
+                    reply = (
+                        "Thank you so much for your wonderful review! 😊 "
+                        "We’re truly happy you enjoyed your stay. "
+                        "You are always welcome back anytime!"
+                    )
+                else:  # Booking
+                    reply = (
+                        "Thank you for your excellent feedback. "
+                        "We are delighted you enjoyed your stay. "
+                        "We look forward to welcoming you again."
+                    )
+
+            else:  # Greek 🇬🇷
+                if platform == "Airbnb":
+                    reply = (
+                        "Σας ευχαριστούμε πάρα πολύ για την υπέροχη κριτική σας! 😊 "
+                        "Χαιρόμαστε πραγματικά που απολαύσατε τη διαμονή σας. "
+                        "Θα είναι χαρά μας να σας φιλοξενήσουμε ξανά!"
+                    )
+                else:
+                    reply = (
+                        "Σας ευχαριστούμε για τα εξαιρετικά σχόλιά σας. "
+                        "Χαιρόμαστε πολύ που μείνατε ευχαριστημένοι από τη διαμονή σας. "
+                        "Ανυπομονούμε να σας υποδεχτούμε ξανά."
+                    )
+
         else:
+            # NEGATIVE or MIXED reply → apology + improvement
 
-            if platform == "Airbnb":
+            if language == "English 🇬🇧":
+
                 reply = (
-                    f"Thank you for your feedback. "
-                    f"We’re sorry about the issue regarding {topic}. "
-                    "We will work on improvements immediately. "
-                    "Hope we can host you again in the future."
+                    f"Thank you for sharing your feedback. "
+                    f"We are sorry for the inconvenience regarding {topic}. "
+                    "We will take immediate steps to improve. "
+                    "We truly hope to welcome you again in the future."
                 )
 
-            else:  # Booking
+            else:  # Greek
                 reply = (
-                    f"Thank you for sharing your experience. "
-                    f"We regret the inconvenience related to {topic}. "
-                    "Your comments help us improve, and we appreciate them."
+                    f"Σας ευχαριστούμε για τα σχόλιά σας. "
+                    f"Λυπούμαστε για την ταλαιπωρία σχετικά με το θέμα: {topic}. "
+                    "Θα προχωρήσουμε άμεσα σε βελτιώσεις. "
+                    "Ελπίζουμε να έχουμε την ευκαιρία να σας φιλοξενήσουμε ξανά."
                 )
 
         # ----------------------------
@@ -136,7 +154,25 @@ if st.button("Generate Reply"):
         st.subheader("📊 Analysis Results")
         st.write("Sentiment:", label)
         st.write("Confidence:", confidence)
-        st.write("Topic detected:", topic)
+        st.write("Detected topic:", topic)
+        st.write("Rating:", f"{rating} ⭐")
 
         st.subheader("✉️ Suggested Reply")
-        st.text_area("Copy your reply:", reply, height=140)
+
+        st.code(reply)
+
+        # Copy button trick
+        st.markdown(
+            f"""
+            <button onclick="navigator.clipboard.writeText(`{reply}`)"
+            style="padding:10px 15px;
+                   border-radius:10px;
+                   background:#2E86C1;
+                   color:white;
+                   border:none;
+                   cursor:pointer;">
+            📋 Copy Reply
+            </button>
+            """,
+            unsafe_allow_html=True
+        )
