@@ -1,3 +1,5 @@
 streamlit==1.54.0
-openai
-python-dotenv
+transformers==4.38.2
+torch==2.6.0
+sentencepiece
+scikit-learn
