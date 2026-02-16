@@ -1,219 +1,152 @@
 import streamlit as st
+from transformers import pipeline
 import warnings
 import os
-from transformers import pipeline
 
 # ----------------------------
-# Hide warnings
+# Hide warnings + HF noise
 # ----------------------------
 warnings.filterwarnings("ignore")
 os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
-# ----------------------------
-# Page config
-# ----------------------------
-st.set_page_config(page_title="Host Review AI v4", page_icon="🏠")
+st.set_page_config(page_title="Host Review AI", page_icon="🏡")
 
 # ----------------------------
 # Title
 # ----------------------------
-st.title("🏠 Host Review AI Assistant (v4)")
-st.write("Smart replies for Airbnb & Booking — fast, elegant, professional.")
+st.title("🏡 Host Review AI Assistant")
+st.write("Airbnb + Booking review analyzer & smart host reply generator.")
 
 # ----------------------------
-# Load Sentiment Model (Lightweight)
+# Load models once
 # ----------------------------
 @st.cache_resource
-def load_sentiment():
-    return pipeline(
+def load_models():
+    sentiment_model = pipeline(
         "sentiment-analysis",
         model="distilbert-base-uncased-finetuned-sst-2-english"
     )
 
-sentiment_model = load_sentiment()
+    topic_model = pipeline(
+        "zero-shot-classification",
+        model="facebook/bart-large-mnli"
+    )
+
+    return sentiment_model, topic_model
+
+
+sentiment, topics = load_models()
 
 # ----------------------------
-# Detect language automatically
+# Options
 # ----------------------------
-def detect_language(text):
-    greek_chars = sum(1 for c in text if "α" <= c.lower() <= "ω")
-    if greek_chars > 5:
-        return "Greek"
-    return "English"
+labels = ["cleanliness", "location", "staff", "comfort", "value", "noise"]
+
+platform = st.selectbox(
+    "Platform:",
+    ["Airbnb", "Booking.com", "Other"]
+)
+
+tone = st.selectbox(
+    "Reply style:",
+    ["Friendly 😊", "Professional ⭐", "Luxury 5★ ✨"]
+)
 
 # ----------------------------
-# Topic detection (keywords)
+# Input
 # ----------------------------
-def detect_topic(text):
-    text = text.lower()
-
-    if "noise" in text or "loud" in text or "θόρυβ" in text:
-        return "noise"
-    if "dirty" in text or "clean" in text or "καθαρι" in text:
-        return "cleanliness"
-    if "location" in text or "close" in text or "περιοχ" in text:
-        return "location"
-    if "host" in text or "staff" in text or "φιλοξ" in text:
-        return "hospitality"
-    if "bed" in text or "comfort" in text or "άνεσ" in text:
-        return "comfort"
-    if "price" in text or "value" in text or "τιμή" in text:
-        return "value"
-
-    return "overall experience"
+review = st.text_area("✍️ Paste guest review here:")
 
 # ----------------------------
-# Session history
+# Analyze Button
 # ----------------------------
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# ----------------------------
-# Controls
-# ----------------------------
-platform = st.selectbox("Platform:", ["Airbnb", "Booking.com"])
-rating = st.slider("Guest Rating (Stars):", 1, 5, 5)
-tone = st.selectbox("Reply Style:", ["Friendly 😊", "Professional ⭐", "Luxury 5★ ✨"])
-
-# ----------------------------
-# Review Input
-# ----------------------------
-review = st.text_area("✍️ Paste the guest review here:")
-
-# ----------------------------
-# Generate Reply
-# ----------------------------
-if st.button("Generate Reply 🚀"):
+if st.button("Analyze & Generate Reply"):
 
     if review.strip() == "":
         st.warning("⚠️ Please enter a review first.")
 
     else:
-        # Detect language
-        lang = detect_language(review)
+        # Sentiment Analysis
+        sent_result = sentiment(review)[0]
+        label = sent_result["label"]
+        score = sent_result["score"]
 
-        # Sentiment
-        sent = sentiment_model(review)[0]
-        label = sent["label"]
-        confidence = round(sent["score"], 2)
-
-        topic = detect_topic(review)
-
-        # Mixed review logic
-        mixed = (label == "POSITIVE" and rating <= 4)
+        # Topic Detection
+        topic_result = topics(review, labels)
+        main_issue = topic_result["labels"][0]
 
         # ----------------------------
-        # Reply Templates
+        # Smart Positive Review Check
         # ----------------------------
-        if label == "POSITIVE" and rating == 5:
-            # Pure positive
+        if label == "POSITIVE" and score > 0.90:
+            main_issue = None
 
-            if lang == "English":
-
-                if tone == "Luxury 5★ ✨":
-                    reply = (
-                        "Thank you for such an exceptional review. "
-                        "We are truly honored that you enjoyed your stay. "
-                        "It would be our pleasure to welcome you back again."
-                    )
-                elif tone == "Professional ⭐":
-                    reply = (
-                        "Thank you very much for your kind feedback. "
-                        "We are delighted you had a wonderful stay. "
-                        "We look forward to hosting you again."
-                    )
-                else:
-                    reply = (
-                        "Thank you so much for your lovely review! 😊 "
-                        "We’re so happy you enjoyed everything. "
-                        "Hope to see you again soon!"
-                    )
-
-            else:  # Greek
-
-                if tone == "Luxury 5★ ✨":
-                    reply = (
-                        "Σας ευχαριστούμε θερμά για την εξαιρετική σας κριτική. "
-                        "Είναι μεγάλη μας χαρά που απολαύσατε τη διαμονή σας. "
-                        "Θα είναι τιμή μας να σας φιλοξενήσουμε ξανά."
-                    )
-                elif tone == "Professional ⭐":
-                    reply = (
-                        "Σας ευχαριστούμε πολύ για τα όμορφα σχόλιά σας. "
-                        "Χαιρόμαστε που είχατε μια υπέροχη εμπειρία. "
-                        "Ανυπομονούμε να σας υποδεχτούμε ξανά."
-                    )
-                else:
-                    reply = (
-                        "Σας ευχαριστούμε πάρα πολύ! 😊 "
-                        "Χαιρόμαστε που όλα ήταν τέλεια. "
-                        "Θα χαρούμε να σας φιλοξενήσουμε ξανά!"
-                    )
-
-        elif mixed:
-            # Positive but small improvement
-
-            if lang == "English":
+        # ----------------------------
+        # Reply Generator
+        # ----------------------------
+        if main_issue is None:
+            # Pure positive review reply
+            if tone == "Friendly 😊":
                 reply = (
-                    "Thank you for your feedback. "
-                    "We’re very happy you enjoyed your stay overall. "
-                    f"We will also pay attention to the area of {topic} to make it even better next time."
+                    "Thank you so much for your wonderful review! 😊 "
+                    "We’re truly happy you enjoyed your stay. "
+                    "Hope to welcome you back again soon!"
                 )
-            else:
+
+            elif tone == "Professional ⭐":
                 reply = (
-                    "Σας ευχαριστούμε πολύ για την κριτική σας. "
-                    "Χαιρόμαστε που μείνατε συνολικά ευχαριστημένοι. "
-                    f"Θα δώσουμε ιδιαίτερη προσοχή και στο θέμα: {topic}, ώστε να γίνει ακόμη καλύτερο."
+                    "Thank you very much for your kind feedback. "
+                    "We are delighted to hear you had a great experience. "
+                    "We look forward to hosting you again."
+                )
+
+            else:  # Luxury
+                reply = (
+                    "Thank you for sharing such a wonderful review. "
+                    "It was truly a pleasure hosting you, and we are delighted "
+                    "that everything met your expectations. "
+                    "We would be honored to welcome you back for another exceptional stay."
                 )
 
         else:
-            # Negative review
-
-            if lang == "English":
-                if platform == "Booking.com":
-                    reply = (
-                        "Thank you for taking the time to share your experience. "
-                        f"We regret the inconvenience regarding {topic}. "
-                        "Your feedback is valuable, and we will take immediate steps to improve."
-                    )
-                else:
-                    reply = (
-                        f"Thank you for your feedback. We’re sorry about the issue with {topic}. "
-                        "We will work on improvements right away and hope to host you again."
-                    )
-
-            else:
+            # Mixed/Negative review reply
+            if tone == "Friendly 😊":
                 reply = (
-                    "Σας ευχαριστούμε για τα σχόλιά σας. "
-                    f"Λυπούμαστε για την ταλαιπωρία σχετικά με το θέμα: {topic}. "
-                    "Θα προχωρήσουμε άμεσα σε βελτιώσεις."
+                    f"Thank you for your review! 😊 "
+                    f"We appreciate your feedback about {main_issue}. "
+                    "We will work on improving this right away. "
+                    "Hope to host you again!"
                 )
 
-        # Save to history
-        st.session_state.history.insert(0, reply)
+            elif tone == "Professional ⭐":
+                reply = (
+                    f"Thank you for your valuable feedback. "
+                    f"We apologize for the inconvenience regarding {main_issue}. "
+                    "Your comments help us improve, and we will take action immediately."
+                )
+
+            else:  # Luxury
+                reply = (
+                    f"Thank you for sharing your experience with us. "
+                    f"We sincerely regret the concern related to {main_issue}. "
+                    "Our team is already reviewing improvements to ensure an exceptional stay in the future."
+                )
 
         # ----------------------------
-        # Display Results
+        # Results
         # ----------------------------
         st.subheader("📊 Analysis Results")
-        st.write("Language:", lang)
+
+        st.write("Platform:", platform)
         st.write("Sentiment:", label)
-        st.write("Confidence:", confidence)
-        st.write("Topic detected:", topic)
-        st.write("Rating:", f"{rating} ⭐")
+        st.write("Confidence:", round(score, 2))
 
-        st.subheader("✉️ Suggested Reply")
-        st.code(reply)
+        if main_issue:
+            st.write("⚠️ Main Topic Detected:", main_issue)
+        else:
+            st.write("✅ Review is fully positive (no issues detected).")
 
-        st.success("Reply generated successfully ✅")
+        st.subheader("✉️ Suggested Host Reply")
 
-# ----------------------------
-# Reply History
-# ----------------------------
-st.subheader("🕒 Recent Replies")
-if st.session_state.history:
-    for i, r in enumerate(st.session_state.history[:3], 1):
-        st.write(f"Reply #{i}:")
-        st.info(r)
-else:
-    st.write("No replies generated yet.")
+        st.text_area("Copy your reply:", reply, height=150)
