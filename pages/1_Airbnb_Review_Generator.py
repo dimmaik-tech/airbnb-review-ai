@@ -1,51 +1,57 @@
 import streamlit as st
+import os
 from openai import OpenAI
 
-st.set_page_config(page_title="Airbnb AI Reviews", layout="wide")
+st.set_page_config(page_title="Airbnb Review Generator", page_icon="✍️", layout="wide")
 
-st.title("🏡 Airbnb AI Review Generator")
+st.title("✍️ Airbnb Review Generator (GPT)")
+st.caption("Ανάλυση review + έτοιμη απάντηση host με tone επιλογή.")
 
-# API KEY
-if "OPENAI_API_KEY" not in st.secrets:
-    st.error("❌ Missing OpenAI API Key in Secrets.")
+# παίρνει το key από Streamlit Secrets (Settings → Secrets)
+api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+if not api_key:
+    st.error('Λείπει OPENAI_API_KEY στα Secrets. Βάλε: OPENAI_API_KEY="sk-..."')
     st.stop()
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = OpenAI(api_key=api_key)
 
-guest_name = st.text_input("Guest Name", "Guest")
+platform = st.selectbox("Platform", ["Airbnb", "Booking.com", "Other"])
+tone = st.selectbox("Reply style", ["Friendly 😊", "Professional ⭐", "Luxury 5★ ✨"])
+lang = st.selectbox("Language", ["English", "Greek"])
+review = st.text_area("✍️ Paste guest review here:")
 
-notes = st.text_area(
-    "Notes about the guest",
-    placeholder="Very clean, polite, great communication..."
-)
+def build_prompt(platform, tone, lang, review):
+    return f"""
+You are an expert short-term rental host assistant.
+Task: Analyze the guest review and write a perfect host reply.
 
-style = st.selectbox(
-    "Review Style",
-    ["Warm & Friendly", "Luxury 5★", "Short & Simple", "Professional Host"]
-)
+Platform: {platform}
+Tone: {tone}
+Language: {lang}
 
-if st.button("✨ Generate Review"):
+Rules:
+- Be polite, warm, concise.
+- If there is a complaint, apologize and state a corrective action.
+- Avoid overpromising.
+- Output only the reply text.
+
+Guest review:
+{review}
+""".strip()
+
+if st.button("Analyze & Generate Reply"):
+    if not review.strip():
+        st.warning("Γράψε/κάνε paste ένα review πρώτα.")
+        st.stop()
+
     with st.spinner("Generating..."):
-
-        prompt = f"""
-Write a perfect Airbnb host review.
-
-Guest: {guest_name}
-Style: {style}
-Notes: {notes}
-
-Short, warm, professional, 5-star tone.
-"""
-
-        response = client.chat.completions.create(
+        resp = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are an expert Airbnb host assistant."},
-                {"role": "user", "content": prompt}
-            ]
+            messages=[{"role": "user", "content": build_prompt(platform, tone, lang, review)}],
+            temperature=0.6,
         )
+        reply = resp.choices[0].message.content.strip()
 
-        review = response.choices[0].message.content
-
-        st.success("✅ Review Ready!")
-        st.text_area("Review", review, height=200)
+    st.subheader("✉️ Suggested Host Reply")
+    st.text_area("Copy your reply:", reply, height=180)
+    st.code(reply)
