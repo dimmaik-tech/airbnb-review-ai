@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import pipeline
+
 import warnings
 import os
 
@@ -150,3 +150,4 @@ if st.button("Analyze & Generate Reply"):
         st.subheader("✉️ Suggested Host Reply")
 
         st.text_area("Copy your reply:", reply, height=150)
+
