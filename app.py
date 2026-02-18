@@ -1,53 +1,24 @@
 import streamlit as st
-import os
-from openai import OpenAI
 
-st.set_page_config(page_title="Host Review AI", page_icon="🏡", layout="wide")
+st.set_page_config(page_title="Host Reply Pro", page_icon="🏡", layout="wide")
 
-st.title("🏡 Host Review AI")
-st.caption("Airbnb + Booking review → smart host reply generator (GPT).")
+st.title("🏡 Host Reply Pro")
+st.caption("Airbnb/Booking review → smart analysis + premium host reply (GPT).")
 
-api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+st.markdown(
+    """
+### Τι κάνει
+- **Auto language** (Greek/English)
+- **Issue detection** (cleanliness, noise, check-in, value κλπ)
+- **Reply styles** (Friendly / Professional / Luxury 5★)
+- **History** (κρατάει τις τελευταίες απαντήσεις)
 
-if not api_key:
-    st.error("Missing OPENAI_API_KEY in Secrets.")
-    st.stop()
-
-client = OpenAI(api_key=api_key)
-
-platform = st.selectbox("Platform", ["Airbnb", "Booking.com", "Other"])
-tone = st.selectbox("Reply style", ["Friendly 😊", "Professional ⭐", "Luxury 5★ ✨"])
-lang = st.selectbox("Language", ["English", "Greek"])
-
-review = st.text_area("✍️ Paste guest review here:")
-
-if st.button("Generate Reply"):
-    if not review.strip():
-        st.warning("Paste a review first.")
-        st.stop()
-
-    prompt = f"""
-You are a professional Airbnb host assistant.
-
-Platform: {platform}
-Tone: {tone}
-Language: {lang}
-
-Write a perfect host reply.
-Guest review:
-{review}
-
-Reply only with the final message.
+➡️ Άνοιξε αριστερά το **Review Generator**.
 """
+)
 
-    with st.spinner("Generating..."):
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.6,
-        )
-
-    reply = resp.choices[0].message.content.strip()
-
-    st.subheader("✉️ Suggested Reply")
-    st.text_area("Copy:", reply, height=180)
+col1, col2 = st.columns([1, 2])
+with col1:
+    st.page_link("pages/1_Review_Generator.py", label="🚀 Start: Review Generator", icon="✍️")
+with col2:
+    st.info("Tip: Στο αποτέλεσμα θα έχεις και code block με εικονίδιο **Copy** πάνω δεξιά.")
