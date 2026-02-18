@@ -1,4 +1,16 @@
 import streamlit as st
+import os
+
+# ----------------------------
+# 🔒 PASSWORD PROTECTION
+# ----------------------------
+PASSWORD = st.secrets.get("APP_PASSWORD", "1234")
+
+pw = st.text_input("Enter Password", type="password")
+
+if pw != PASSWORD:
+    st.warning("🔒 Access denied")
+    st.stop()
 
 st.set_page_config(page_title="Host Reply Pro", page_icon="🏡", layout="wide")
 
@@ -25,3 +37,4 @@ st.markdown(
 )
 
 st.info("Tip: Το OpenAI key μπαίνει μόνο στο Streamlit → Manage app → Settings → Secrets.")
+
