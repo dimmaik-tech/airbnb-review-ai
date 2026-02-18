@@ -1,21 +1,9 @@
 import streamlit as st
 import os
-import streamlit as st
 from auth import require_login, show_logout_button
 
 require_login("Host Reply Pro")
 show_logout_button()
-
-
-
-# =========================================
-# 🚫 BLOCK ACCESS IF NOT LOGGED IN
-# =========================================
-
-if not st.session_state.logged_in:
-    login_screen()
-    st.stop()
-
 
 # =========================================
 # ✅ MAIN APP AFTER LOGIN
@@ -45,4 +33,5 @@ st.markdown(
 )
 
 logout_button()
+
 
