@@ -17,8 +17,9 @@ st.markdown(
 """
 )
 
-col1, col2 = st.columns([1, 2])
-with col1:
-    st.page_link("pages/1_Review_Generator.py", label="🚀 Start: Review Generator", icon="✍️")
-with col2:
-    st.info("Tip: Στο αποτέλεσμα θα έχεις και code block με εικονίδιο **Copy** πάνω δεξιά.")
+# Αν θες κουμπί Start, άφησέ το έτσι:
+st.page_link("pages/1_Airbnb_Review_Generator.py", label="🚀 Start: Review Generator", icon="✍️")
+
+st.info("Tip: Στο αποτέλεσμα θα έχεις και code block με εικονίδιο **Copy** πάνω δεξιά.")
+
+
