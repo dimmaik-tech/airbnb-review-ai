@@ -1,41 +1,11 @@
 import streamlit as st
 import os
+import streamlit as st
+from auth import require_login, show_logout_button
 
-# =========================================
-# 🔐 PASSWORD LOGIN SYSTEM (PRO)
-# =========================================
+require_login("Host Reply Pro")
+show_logout_button()
 
-PASSWORD = st.secrets.get("APP_PASSWORD", None)
-
-if PASSWORD is None:
-    st.error("❌ Missing APP_PASSWORD in Secrets")
-    st.stop()
-
-# Session state for login
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-
-def login_screen():
-    st.title("🔒 Host Reply Pro – Private Access")
-    st.write("This app is private. Please enter the password to continue.")
-
-    pw = st.text_input("Enter Password", type="password")
-
-    if st.button("Login"):
-        if pw == PASSWORD:
-            st.session_state.logged_in = True
-            st.success("✅ Access granted!")
-            st.rerun()
-        else:
-            st.error("❌ Wrong password")
-
-
-def logout_button():
-    st.sidebar.markdown("---")
-    if st.sidebar.button("🚪 Logout"):
-        st.session_state.logged_in = False
-        st.rerun()
 
 
 # =========================================
@@ -75,3 +45,4 @@ st.markdown(
 )
 
 logout_button()
+
