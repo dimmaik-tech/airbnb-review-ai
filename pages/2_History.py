@@ -1,6 +1,10 @@
 from auth import require_login, show_logout_button
 require_login("Host Reply Pro")
 show_logout_button()
+
+from auth import require_login, show_logout_button
+require_login("Host Reply Pro")
+show_logout_button()
 import json
 import streamlit as st
 
