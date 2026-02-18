@@ -7,19 +7,21 @@ st.caption("Airbnb/Booking review → smart analysis + premium host reply (GPT).
 
 st.markdown(
     """
-### Τι κάνει
-- **Auto language** (Greek/English)
-- **Issue detection** (cleanliness, noise, check-in, value κλπ)
-- **Reply styles** (Friendly / Professional / Luxury 5★)
-- **History** (κρατάει τις τελευταίες απαντήσεις)
+### Τι έχεις (Premium v1)
+- ✅ **Persistent Settings** (κρατάνε μόνιμα)
+- ✅ **Persistent History** (δεν χάνεται)
+- ✅ **Properties profiles** (πολλά σπίτια)
+- ✅ **Reply length** (Short / Normal / Premium)
+- ✅ **Crisis mode** (damage control σε κακά reviews)
+- ✅ **PDF export** (report)
 
-➡️ Άνοιξε αριστερά το **Review Generator**.
+➡️ Διάλεξε σελίδα από το αριστερό menu:
+- **Airbnb Review Generator**
+- **History**
+- **Settings**
+- **Properties**
+- **PDF Export**
 """
 )
 
-# Αν θες κουμπί Start, άφησέ το έτσι:
-st.page_link("pages/1_Airbnb_Review_Generator.py", label="🚀 Start: Review Generator", icon="✍️")
-
-st.info("Tip: Στο αποτέλεσμα θα έχεις και code block με εικονίδιο **Copy** πάνω δεξιά.")
-
-
+st.info("Tip: Το OpenAI key μπαίνει μόνο στο Streamlit → Manage app → Settings → Secrets.")
