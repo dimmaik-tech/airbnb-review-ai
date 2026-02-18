@@ -1,3 +1,7 @@
+from auth import require_login, show_logout_button
+require_login("Host Reply Pro")
+show_logout_button()
+
 import streamlit as st
 from db import init_db, list_properties, upsert_property, delete_property
 
